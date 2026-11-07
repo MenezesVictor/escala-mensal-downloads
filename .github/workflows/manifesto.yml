@@ -1,4 +1,4 @@
-name: Autorizar atualização Windows
+name: Autorizar atualizações Windows e Mac
 on:
   release:
     types: [published]
@@ -23,11 +23,14 @@ jobs:
           import json, re, pathlib
           r=json.load(open('release.json'));tag=r['tag_name']
           assert not r['draft'] and not r['prerelease'] and re.fullmatch(r'v[0-9]+\.[0-9]+(?:\.[0-9]+)?',tag)
-          name=f'EscalaMensal_{tag[1:]}_Atualizacao.zip'
-          asset,=[a for a in r['assets'] if a['name']==name and a['state']=='uploaded']
-          digest=asset['digest']
-          assert re.fullmatch('sha256:[0-9a-f]{64}',digest)
-          pathlib.Path('SHA256SUMS.txt').write_text(f'{digest[7:]}  {name}\n')
+          lines=[]
+          for suffix in ('Atualizacao','Mac_Apple_Silicon'):
+              name=f'EscalaMensal_{tag[1:]}_{suffix}.zip'
+              asset,=[a for a in r['assets'] if a['name']==name and a['state']=='uploaded']
+              digest=asset['digest']
+              assert re.fullmatch('sha256:[0-9a-f]{64}',digest)
+              lines.append(f'{digest[7:]}  {name}')
+          pathlib.Path('SHA256SUMS.txt').write_text('\n'.join(lines)+'\n')
           PY
           head=$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)
           query='mutation($input:CreateCommitOnBranchInput!){createCommitOnBranch(input:$input){commit{oid}}}'
